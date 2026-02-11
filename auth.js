@@ -99,17 +99,19 @@ const getTransactions = async (req, res) => {
         const apiKey = process.env.ETHERSCAN_API_KEY;
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
-        // ดึงข้อมูลจาก Etherscan Sepolia API
+        // ใช้ axios ดึงข้อมูลจาก Etherscan Sepolia
         const url = `https://api-sepolia.etherscan.io/api?module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&sort=desc&apikey=${apiKey}`;
         
         const response = await axios.get(url);
         
+        // ส่ง success: true และข้อมูลธุรกรรม (ถ้าไม่มีให้ส่งเป็น Array ว่าง)
         res.json({ 
             success: true, 
-            transactions: response.data.result || [] 
+            transactions: response.data.result && Array.isArray(response.data.result) ? response.data.result : [] 
         });
     } catch (error) {
-        res.status(500).json({ error: "ไม่สามารถดึงข้อมูลประวัติได้" });
+        console.error("Etherscan API Error:", error);
+        res.status(500).json({ success: false, error: "ไม่สามารถดึงข้อมูลประวัติได้", transactions: [] });
     }
 };
 
