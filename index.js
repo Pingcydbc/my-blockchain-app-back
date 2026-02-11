@@ -1,25 +1,28 @@
 const express = require('express');
-const cors = require('cors'); // 1. Import cors
+const cors = require('cors');
 require('dotenv').config();
 
 const { register, login, generateWallet, transferToken, getTransactions } = require('./auth');
 
 const app = express();
 
-// ตั้งค่า CORS ครั้งเดียวให้ครอบคลุม
-// 2. ตั้งค่า CORS
+// --- 🟢 แก้ไข CORS ให้รองรับ Preflight Request ---
 app.use(cors({
-    origin: 'https://my-blockchain-app-eta.vercel.app', // อนุญาตเฉพาะ Frontend ของคุณ
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: 'https://my-blockchain-app-eta.vercel.app', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
 
 app.use(express.json());
 
+// เช็คสถานะ API ง่ายๆ
+app.get('/', (req, res) => res.send('OERC API is running...'));
+
 // --- Routes ---
 app.post('/register', register);
 app.post('/login', login);
-app.post('/generate-wallet', generateWallet); // เผื่อไว้สำหรับคนยังไม่มีกระเป๋า
+app.post('/generate-wallet', generateWallet);
 app.post('/transfer', transferToken);
 app.get('/transactions', getTransactions);
 
