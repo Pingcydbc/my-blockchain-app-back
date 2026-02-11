@@ -100,8 +100,7 @@ const getTransactions = async (req, res) => {
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
         // 🟢 เปลี่ยนเป็น V2 Endpoint: เพิ่ม chainid=11155111 เข้าไปใน URL
-        const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;
-        
+const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;        
         const response = await axios.get(url);
         
         if (response.data.status === "1") {
