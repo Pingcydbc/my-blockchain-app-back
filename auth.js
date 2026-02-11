@@ -93,38 +93,28 @@ const transferToken = async (req, res) => {
 // --- 5. ดึงประวัติธุรกรรม (Get Transactions) - ปรับปรุงเพื่อความชัวร์ ---
 const getTransactions = async (req, res) => {
     const { address } = req.query;
-    if (!address) return res.status(400).json({ error: "กรุณาระบุที่อยู่กระเป๋า" });
+    if (!address) return res.status(400).json({ error: "No address" });
 
     try {
-        const apiKey = "Y5SJ2VW5F9UGQJG537JQMUZ8DEQRPY6STI"; // ลองวางตรงๆ เพื่อเช็คว่าพังที่ Env หรือเปล่า
+        // วาง Key ตรงๆ เพื่อทดสอบ (Hardcode)
+        const apiKey = "Y5SJ2VW5F9UGQJG537JQMUZ8DEQRPY6STI"; 
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
-        // ตรวจสอบว่า API Key มีค่าหรือไม่ก่อนส่ง Request
-        if (!apiKey) {
-            console.error("Missing ETHERSCAN_API_KEY in Environment Variables");
-            return res.status(500).json({ success: false, transactions: [], message: "Server API Key missing" });
-        }
-
+        // ใช้ URL V2 ที่ระบุ chainid เสมอ
         const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;
         
+        console.log("Requesting URL:", url); // เพิ่ม Log เพื่อดูใน Vercel
+
         const response = await axios.get(url);
         
-        // Etherscan API จะส่ง status "1" เมื่อพบข้อมูล และ "0" เมื่อไม่พบ (เช่น ยังไม่มี transaction)
         if (response.data.status === "1") {
-            res.json({ 
-                success: true, 
-                transactions: response.data.result || [] 
-            });
+            res.json({ success: true, transactions: response.data.result || [] });
         } else {
-            // ส่งค่าว่างกลับไปอย่างปลอดภัย หากยังไม่มีรายการธุรกรรม
-            res.json({ 
-                success: true, 
-                transactions: [], 
-                message: response.data.message 
-            });
+            // ถ้า Etherscan ตอบกลับมาเป็นอย่างอื่น ให้ส่ง Message ไปดูด้วย
+            res.json({ success: true, transactions: [], message: response.data.message, result: response.data.result });
         }
     } catch (error) {
-        console.error("Etherscan API Error:", error.message);
+        console.error("API Error:", error.message);
         res.status(500).json({ success: false, transactions: [] });
     }
 };
