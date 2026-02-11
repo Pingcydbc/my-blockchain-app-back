@@ -98,19 +98,29 @@ const getTransactions = async (req, res) => {
     if (!address) return res.status(400).json({ error: "No address" });
 
     try {
-        // ลองใส่ URL แบบสมบูรณ์เพื่อทดสอบว่า API ฝั่งนู้นตอบอะไรกลับมา
-        const testUrl = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4&address=${address}&page=1&offset=100&sort=desc&apikey=Y5SJ2VW5F9UGQJG537JQMUZ8DEQRPY6STI`;
+        // 🟢 เปลี่ยน Domain เป็น api.etherscan.io/v2/api และระบุ chainid
+        // นี่คือโครงสร้างที่ถูกต้องที่สุดของ V2 API
+        const testUrl = `https://api.etherscan.io/v2/api?chainid=11155111&module=account&action=tokentx&contractaddress=0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4&address=${address}&page=1&offset=100&sort=desc&apikey=Y5SJ2VW5F9UGQJG537JQMUZ8DEQRPY6STI`;
         
+        console.log("Calling V2 Global URL...");
+
         const response = await axios.get(testUrl);
         
-        // ส่งผลลัพธ์ดิบจาก Etherscan กลับมาดูเลยว่าทำไมถึง NOTOK
-        res.json({ 
-            success: true, 
-            transactions: response.data.result || [], 
-            etherscan_msg: response.data.message,
-            etherscan_result: response.data.result,
-            debug: "V2_FINAL_TEST"
-        });
+        if (response.data.status === "1") {
+            res.json({ 
+                success: true, 
+                transactions: response.data.result || [],
+                debug: "V2_GLOBAL_ENDPOINT_SUCCESS"
+            });
+        } else {
+            res.json({ 
+                success: true, 
+                transactions: [], 
+                etherscan_msg: response.data.message,
+                etherscan_result: response.data.result,
+                debug: "V2_GLOBAL_ENDPOINT_NOTOK"
+            });
+        }
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
