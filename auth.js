@@ -96,7 +96,7 @@ const getTransactions = async (req, res) => {
     if (!address) return res.status(400).json({ error: "กรุณาระบุที่อยู่กระเป๋า" });
 
     try {
-        const apiKey = process.env.ETHERSCAN_API_KEY; 
+        const apiKey = "Y5SJ2VW5F9UGQJG537JQMUZ8DEQRPY6STI"; // ลองวางตรงๆ เพื่อเช็คว่าพังที่ Env หรือเปล่า
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
         // ตรวจสอบว่า API Key มีค่าหรือไม่ก่อนส่ง Request
