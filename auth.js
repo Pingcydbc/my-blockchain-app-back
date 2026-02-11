@@ -90,7 +90,7 @@ const transferToken = async (req, res) => {
     }
 };
 
-// --- 5. ดึงประวัติธุรกรรม (Get Transactions) ---
+// --- 5. ดึงประวัติธุรกรรม (Get Transactions) - ปรับปรุงเพื่อความชัวร์ ---
 const getTransactions = async (req, res) => {
     const { address } = req.query;
     if (!address) return res.status(400).json({ error: "กรุณาระบุที่อยู่กระเป๋า" });
@@ -99,16 +99,24 @@ const getTransactions = async (req, res) => {
         const apiKey = process.env.ETHERSCAN_API_KEY; 
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
-        // 🟢 เปลี่ยนเป็น V2 Endpoint: เพิ่ม chainid=11155111 เข้าไปใน URL
-const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;        
+        // ตรวจสอบว่า API Key มีค่าหรือไม่ก่อนส่ง Request
+        if (!apiKey) {
+            console.error("Missing ETHERSCAN_API_KEY in Environment Variables");
+            return res.status(500).json({ success: false, transactions: [], message: "Server API Key missing" });
+        }
+
+        const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;
+        
         const response = await axios.get(url);
         
+        // Etherscan API จะส่ง status "1" เมื่อพบข้อมูล และ "0" เมื่อไม่พบ (เช่น ยังไม่มี transaction)
         if (response.data.status === "1") {
             res.json({ 
                 success: true, 
                 transactions: response.data.result || [] 
             });
         } else {
+            // ส่งค่าว่างกลับไปอย่างปลอดภัย หากยังไม่มีรายการธุรกรรม
             res.json({ 
                 success: true, 
                 transactions: [], 
@@ -116,10 +124,9 @@ const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=accoun
             });
         }
     } catch (error) {
-        console.error("Etherscan V2 Error:", error);
+        console.error("Etherscan API Error:", error.message);
         res.status(500).json({ success: false, transactions: [] });
     }
 };
-
 // ส่งออกฟังก์ชันทั้งหมด (ตอนนี้ครบทุกชื่อแล้ว)
 module.exports = { register, login, generateWallet, transferToken, getTransactions };
