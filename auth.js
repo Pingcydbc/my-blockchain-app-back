@@ -91,30 +91,28 @@ const transferToken = async (req, res) => {
 };
 
 // --- 5. ดึงประวัติธุรกรรม (Get Transactions) - ปรับปรุงเพื่อความชัวร์ ---
+// บรรทัดนี้เพิ่มเพื่อบังคับให้ Git เห็นว่ามีการเปลี่ยนแปลงไฟล์ครั้งใหญ่ 
+// UPDATE_TO_V2_CHECK_TIME: 2026-02-12
 const getTransactions = async (req, res) => {
     const { address } = req.query;
     if (!address) return res.status(400).json({ error: "No address" });
 
     try {
-        // วาง Key ตรงๆ เพื่อทดสอบ (Hardcode)
         const apiKey = "Y5SJ2VW5F9UGQJG537JQMUZ8DEQRPY6STI"; 
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
-        // ใช้ URL V2 ที่ระบุ chainid เสมอ
+        // มั่นใจว่ามี chainid=11155111 อยู่ในนี้แน่นอน
         const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;
         
-        console.log("Requesting URL:", url); // เพิ่ม Log เพื่อดูใน Vercel
-
         const response = await axios.get(url);
         
         if (response.data.status === "1") {
             res.json({ success: true, transactions: response.data.result || [] });
         } else {
-            // ถ้า Etherscan ตอบกลับมาเป็นอย่างอื่น ให้ส่ง Message ไปดูด้วย
-            res.json({ success: true, transactions: [], message: response.data.message, result: response.data.result });
+            // ส่งค่ากลับไปตรวจสอบ
+            res.json({ success: true, transactions: [], message: response.data.message, debug_url: "V2_CHECK_ACTIVE" });
         }
     } catch (error) {
-        console.error("API Error:", error.message);
         res.status(500).json({ success: false, transactions: [] });
     }
 };
