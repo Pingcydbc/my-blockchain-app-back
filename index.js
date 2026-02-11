@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // 1. Import cors
 require('dotenv').config();
 
 const { register, login, generateWallet, transferToken, getTransactions } = require('./auth');
@@ -7,13 +7,14 @@ const { register, login, generateWallet, transferToken, getTransactions } = requ
 const app = express();
 
 // ตั้งค่า CORS ครั้งเดียวให้ครอบคลุม
+// 2. ตั้งค่า CORS
 app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST'],
+    origin: 'https://my-blockchain-app-eta.vercel.app', // อนุญาตเฉพาะ Frontend ของคุณ
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json()); 
+app.use(express.json());
 
 // --- Routes ---
 app.post('/register', register);
