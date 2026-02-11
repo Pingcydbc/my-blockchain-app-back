@@ -1,6 +1,7 @@
 const { ethers } = require('ethers');
 const bcrypt = require('bcrypt');
 const db = require('./db');
+const axios = require('axios'); // สำหรับดึงข้อมูลจาก Etherscan
 
 // --- 1. สมัครสมาชิก (ยังไม่มีกระเป๋า) ---
 const register = async (req, res) => {
@@ -50,7 +51,6 @@ const generateWallet = async (req, res) => {
             [wallet.address, wallet.privateKey, username]
         );
         
-        // ส่งทั้ง success และ address กลับไป
         res.json({ 
             success: true, 
             address: wallet.address, 
@@ -61,4 +61,57 @@ const generateWallet = async (req, res) => {
     }
 };
 
+// --- 4. โอนเหรียญ (Transfer Token) ---
+const transferToken = async (req, res) => {
+    const { fromUsername, toAddress, amount } = req.body;
+    try {
+        // ดึง Private Key ของผู้ส่งจากฐานข้อมูล
+        const [users] = await db.execute('SELECT private_key FROM users WHERE username = ?', [fromUsername]);
+        if (users.length === 0 || !users[0].private_key) {
+            return res.status(404).json({ error: "ไม่พบกระเป๋าเงินของผู้ส่ง" });
+        }
+
+        const privateKey = users[0].private_key;
+        const provider = new ethers.providers.JsonRpcProvider("https://1rpc.io/sepolia");
+        const wallet = new ethers.Wallet(privateKey, provider);
+
+        // ABI สำหรับฟังก์ชัน transfer ของ ERC-20
+        const abi = ["function transfer(address to, uint256 amount) returns (bool)"];
+        const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
+        const contract = new ethers.Contract(contractAddress, abi, wallet);
+
+        // ทำการโอน (18 decimals)
+        const tx = await contract.transfer(toAddress, ethers.utils.parseUnits(amount, 18));
+        await tx.wait(); // รอยืนยันธุรกรรม
+
+        res.json({ success: true, hash: tx.hash });
+    } catch (error) {
+        res.status(500).json({ error: "โอนไม่สำเร็จ: " + error.message });
+    }
+};
+
+// --- 5. ดึงประวัติธุรกรรม (Get Transactions) ---
+const getTransactions = async (req, res) => {
+    const { address } = req.query;
+    if (!address) return res.status(400).json({ error: "กรุณาระบุที่อยู่กระเป๋า" });
+
+    try {
+        const apiKey = process.env.ETHERSCAN_API_KEY;
+        const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
+        
+        // ดึงข้อมูลจาก Etherscan Sepolia API
+        const url = `https://api-sepolia.etherscan.io/api?module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&sort=desc&apikey=${apiKey}`;
+        
+        const response = await axios.get(url);
+        
+        res.json({ 
+            success: true, 
+            transactions: response.data.result || [] 
+        });
+    } catch (error) {
+        res.status(500).json({ error: "ไม่สามารถดึงข้อมูลประวัติได้" });
+    }
+};
+
+// ส่งออกฟังก์ชันทั้งหมด (ตอนนี้ครบทุกชื่อแล้ว)
 module.exports = { register, login, generateWallet, transferToken, getTransactions };
