@@ -96,22 +96,23 @@ const getTransactions = async (req, res) => {
     if (!address) return res.status(400).json({ error: "กรุณาระบุที่อยู่กระเป๋า" });
 
     try {
-        const apiKey = process.env.ETHERSCAN_API_KEY;
+        // ดึง API Key จาก Environment Variable ที่ตั้งไว้ใน Vercel
+        const apiKey = process.env.ETHERSCAN_API_KEY; 
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
-        // 🟢 เปลี่ยนเป็น Etherscan API V2 Endpoint (Sepolia chainid คือ 11155111)
+        // 🟢 อัปเกรดเป็น V2 URL: เพิ่ม chainid=11155111 เพื่อระบุว่าเป็นเครือข่าย Sepolia
         const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;
         
         const response = await axios.get(url);
         
-        // ตรวจสอบ status จาก API V2
+        // ตรวจสอบสถานะการตอบกลับจาก Etherscan V2
         if (response.data.status === "1") {
             res.json({ 
                 success: true, 
                 transactions: response.data.result || [] 
             });
         } else {
-            // กรณีไม่มีรายการ หรือข้อความแจ้งเตือนจาก API
+            // กรณีไม่พบรายการ หรือมีข้อความแจ้งเตือนจากระบบ V2
             res.json({ 
                 success: true, 
                 transactions: [], 
