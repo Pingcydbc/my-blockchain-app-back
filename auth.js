@@ -98,31 +98,21 @@ const getTransactions = async (req, res) => {
     if (!address) return res.status(400).json({ error: "No address" });
 
     try {
-        // 🟢 เปลี่ยน Domain เป็น api.etherscan.io/v2/api และระบุ chainid
-        // นี่คือโครงสร้างที่ถูกต้องที่สุดของ V2 API
-        const testUrl = `https://api.etherscan.io/v2/api?chainid=11155111&module=account&action=tokentx&contractaddress=0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4&address=${address}&page=1&offset=100&sort=desc&apikey=Y5SJ2VW5F9UGQJG537JQMUZ8DEQRPY6STI`;
+        const apiKey = process.env.ETHERSCAN_API_KEY; 
+        const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
-        console.log("Calling V2 Global URL...");
-
-        const response = await axios.get(testUrl);
+        // ใช้ Global V2 Endpoint ที่เราทดสอบผ่านแล้ว
+        const url = `https://api.etherscan.io/v2/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;
+        
+        const response = await axios.get(url);
         
         if (response.data.status === "1") {
-            res.json({ 
-                success: true, 
-                transactions: response.data.result || [],
-                debug: "V2_GLOBAL_ENDPOINT_SUCCESS"
-            });
+            res.json({ success: true, transactions: response.data.result || [] });
         } else {
-            res.json({ 
-                success: true, 
-                transactions: [], 
-                etherscan_msg: response.data.message,
-                etherscan_result: response.data.result,
-                debug: "V2_GLOBAL_ENDPOINT_NOTOK"
-            });
+            res.json({ success: true, transactions: [] });
         }
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ success: false, transactions: [] });
     }
 };
 // ส่งออกฟังก์ชันทั้งหมด (ตอนนี้ครบทุกชื่อแล้ว)
