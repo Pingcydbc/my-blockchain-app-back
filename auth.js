@@ -28,10 +28,10 @@ const login = async (req, res) => {
         const user = users[0];
         const isMatch = await bcrypt.compare(password, user.password);
         if (isMatch) {
-            res.json({ 
+            res.json({
                 id: user.id,
                 username: user.username,
-                wallet_address: user.wallet_address 
+                wallet_address: user.wallet_address
             });
         } else {
             res.status(400).json({ message: "รหัสผ่านไม่ถูกต้อง" });
@@ -50,11 +50,11 @@ const generateWallet = async (req, res) => {
             'UPDATE users SET wallet_address = ?, private_key = ? WHERE username = ?',
             [wallet.address, wallet.privateKey, username]
         );
-        
-        res.json({ 
-            success: true, 
-            address: wallet.address, 
-            message: "สร้างกระเป๋าสำเร็จ!" 
+
+        res.json({
+            success: true,
+            address: wallet.address,
+            message: "สร้างกระเป๋าสำเร็จ!"
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -93,25 +93,27 @@ const transferToken = async (req, res) => {
 // --- 5. ดึงประวัติธุรกรรม (Get Transactions) ---
 const getTransactions = async (req, res) => {
     const { address } = req.query;
-    if (!address) return res.status(400).json({ error: "กรุณาระบุที่อยู่กระเป๋า" });
+    if (!address) return res.status(400).json({ error: "No address provided" });
 
     try {
         const apiKey = process.env.ETHERSCAN_API_KEY;
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
-        
-        // ใช้ axios ดึงข้อมูลจาก Etherscan Sepolia
-        const url = `https://api-sepolia.etherscan.io/api?module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&sort=desc&apikey=${apiKey}`;
-        
+
+        // 🟢 ต้องใช้ action=tokentx สำหรับเหรียญ ERC-20
+        const url = `https://api-sepolia.etherscan.io/api?module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;
+
         const response = await axios.get(url);
-        
-        // ส่ง success: true และข้อมูลธุรกรรม (ถ้าไม่มีให้ส่งเป็น Array ว่าง)
-        res.json({ 
-            success: true, 
-            transactions: response.data.result && Array.isArray(response.data.result) ? response.data.result : [] 
-        });
+
+        // เช็คว่า Etherscan ส่งข้อมูลกลับมาสำเร็จไหม
+        if (response.data.status === "1") {
+            res.json({ success: true, transactions: response.data.result });
+        } else {
+            // กรณีไม่มีรายการ หรือ API Key ผิด
+            res.json({ success: true, transactions: [], message: response.data.message });
+        }
     } catch (error) {
-        console.error("Etherscan API Error:", error);
-        res.status(500).json({ success: false, error: "ไม่สามารถดึงข้อมูลประวัติได้", transactions: [] });
+        console.error("Backend Error:", error);
+        res.status(500).json({ success: false, transactions: [] });
     }
 };
 
