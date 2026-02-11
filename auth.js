@@ -96,18 +96,25 @@ const getTransactions = async (req, res) => {
     if (!address) return res.status(400).json({ error: "กรุณาระบุที่อยู่กระเป๋า" });
 
     try {
-        const apiKey = process.env.ETHERSCAN_API_KEY; // ตรวจสอบให้แน่ใจว่าค่านี้คือ Y5SJ2VW5F9UGQJG537JQMUZ8DEQRPY6STI
+        const apiKey = process.env.ETHERSCAN_API_KEY; 
         const contractAddress = "0x718dF080ddCB27Ee16B482c638f9Ed4b11e7Daf4";
         
-        // 🟢 เปลี่ยนเป็น V2 Endpoint: เพิ่ม chainid=11155111
+        // 🟢 เปลี่ยนเป็น V2 Endpoint: เพิ่ม chainid=11155111 เข้าไปใน URL
         const url = `https://api-sepolia.etherscan.io/api?chainid=11155111&module=account&action=tokentx&contractaddress=${contractAddress}&address=${address}&page=1&offset=100&sort=desc&apikey=${apiKey}`;
         
         const response = await axios.get(url);
         
         if (response.data.status === "1") {
-            res.json({ success: true, transactions: response.data.result || [] });
+            res.json({ 
+                success: true, 
+                transactions: response.data.result || [] 
+            });
         } else {
-            res.json({ success: true, transactions: [], message: response.data.message });
+            res.json({ 
+                success: true, 
+                transactions: [], 
+                message: response.data.message 
+            });
         }
     } catch (error) {
         console.error("Etherscan V2 Error:", error);
